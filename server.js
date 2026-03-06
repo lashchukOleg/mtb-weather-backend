@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
@@ -61,19 +62,40 @@ app.listen(PORT, () => {
     console.log(`Сервер запущен на порту ${PORT}`);
 });
 
-// Простая модель пользователя (если используешь Mongoose)
-const User = mongoose.model('User', { name: String, email: String });
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+});
+
+const User = mongoose.model('User', userSchema);
 
 
 app.post('/api/register', async (req, res) => {
-    console.log("Получены данные:", req.body);
+    const { email, password } = req.body;
+
     try {
-        const newUser = new User(req.body);
-        const savedUser = await newUser.save(); // ОБЯЗАТЕЛЬНО await
-        console.log("✅ Пользователь успешно сохранен в базу:", savedUser);
-        res.status(201).json({ message: "Успешно сохранено!" });
-    } catch (error) {
-        console.log("❌ Ошибка при сохранении в БД:", error.message);
-        res.status(500).json({ error: error.message });
+        // 1. Проверяем, нет ли уже такого пользователя
+        const candidate = await User.findOne({ email });
+        if (candidate) {
+            return res.status(400).json({ message: "Этот email уже занят" });
+        }
+
+        // 2. Шифруем пароль
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 3. Создаем и сохраняем
+        const user = new User({
+            email,
+            password: hashedPassword
+        });
+
+        await user.save(); // Тот самый важный await!
+        
+        console.log(`✅ Пользователь ${email} успешно зарегистрирован`);
+        res.status(201).json({ message: "Регистрация прошла успешно!" });
+
+    } catch (e) {
+        console.error("❌ Ошибка базы:", e.message);
+        res.status(500).json({ message: "Что-то пошло не так, попробуйте снова" });
     }
 });
