@@ -66,11 +66,14 @@ const User = mongoose.model('User', { name: String, email: String });
 
 
 app.post('/api/register', async (req, res) => {
-    console.log("Получены данные:", req.body); // Это появится в логах Render
+    console.log("Получены данные:", req.body);
     try {
-        // Логика сохранения в базу...
-        res.status(201).json({ message: "Успех!" }); 
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+        const newUser = new User(req.body);
+        const savedUser = await newUser.save(); // ОБЯЗАТЕЛЬНО await
+        console.log("✅ Пользователь успешно сохранен в базу:", savedUser);
+        res.status(201).json({ message: "Успешно сохранено!" });
+    } catch (error) {
+        console.log("❌ Ошибка при сохранении в БД:", error.message);
+        res.status(500).json({ error: error.message });
     }
 });
