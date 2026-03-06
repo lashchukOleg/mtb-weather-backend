@@ -99,3 +99,32 @@ app.post('/api/register', async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Сервер запущен на порту ${PORT}`));
+
+// Добавь это в свой server.js после маршрута регистрации
+
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    console.log("🔑 Попытка входа:", email);
+
+    try {
+        // 1. Ищем пользователя по почте
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "Пользователь не найден" });
+        }
+
+        // 2. Сравниваем введенный пароль с тем, что в базе
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Неверный пароль" });
+        }
+
+        // Если всё ок
+        console.log("✅ Успешный вход:", email);
+        res.status(200).json({ message: "Вы успешно вошли!" });
+
+    } catch (error) {
+        console.error("❌ Ошибка при входе:", error.message);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+});
