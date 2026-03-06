@@ -64,13 +64,13 @@ app.listen(PORT, () => {
 // Простая модель пользователя (если используешь Mongoose)
 const User = mongoose.model('User', { name: String, email: String });
 
-// Маршрут для регистрации
+
 app.post('/api/register', async (req, res) => {
+    console.log("Получены данные:", req.body); // Это появится в логах Render
     try {
-        const newUser = new User(req.body);
-        await newUser.save();
-        res.status(201).send({ message: "Пользователь сохранен в базу!" });
-    } catch (error) {
-        res.status(400).send("Ошибка: " + error.message);
+        // Логика сохранения в базу...
+        res.status(201).json({ message: "Успех!" }); 
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
