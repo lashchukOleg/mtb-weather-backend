@@ -55,12 +55,7 @@ app.post('/api/trails', async (req, res) => {
     }
 });
 
-// 4. Запуск сервера
-// Используем порт от системы (Render) или 5000 для локальной разработки
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
-});
+
 
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
@@ -70,32 +65,37 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 
+// Маршрут регистрации
 app.post('/api/register', async (req, res) => {
     const { email, password } = req.body;
+    console.log("📥 Получен запрос на регистрацию:", email);
 
     try {
-        // 1. Проверяем, нет ли уже такого пользователя
-        const candidate = await User.findOne({ email });
-        if (candidate) {
-            return res.status(400).json({ message: "Этот email уже занят" });
+        // 1. Проверяем, существует ли пользователь
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Этот email уже зарегистрирован" });
         }
 
-        // 2. Шифруем пароль
+        // 2. Шифруем пароль (10 — это уровень сложности шифрования)
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 3. Создаем и сохраняем
-        const user = new User({
+        // 3. Создаем и сохраняем в базу
+        const newUser = new User({
             email,
             password: hashedPassword
         });
 
-        await user.save(); // Тот самый важный await!
-        
-        console.log(`✅ Пользователь ${email} успешно зарегистрирован`);
+        const savedUser = await newUser.save(); // Обязательно await!
+        console.log("✅ Пользователь сохранен в БД:", savedUser.email);
+
         res.status(201).json({ message: "Регистрация прошла успешно!" });
 
-    } catch (e) {
-        console.error("❌ Ошибка базы:", e.message);
-        res.status(500).json({ message: "Что-то пошло не так, попробуйте снова" });
+    } catch (error) {
+        console.error("❌ Ошибка сервера:", error.message);
+        res.status(500).json({ message: "Ошибка при регистрации", error: error.message });
     }
 });
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`🚀 Сервер запущен на порту ${PORT}`));
