@@ -60,3 +60,17 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Сервер запущен на порту ${PORT}`);
 });
+
+// Простая модель пользователя (если используешь Mongoose)
+const User = mongoose.model('User', { name: String, email: String });
+
+// Маршрут для регистрации
+app.post('/api/register', async (req, res) => {
+    try {
+        const newUser = new User(req.body);
+        await newUser.save();
+        res.status(201).send({ message: "Пользователь сохранен в базу!" });
+    } catch (error) {
+        res.status(400).send("Ошибка: " + error.message);
+    }
+});
