@@ -128,3 +128,43 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 });
+
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = '123qwe'; // Придумай любую строку
+
+// 1. Обнови маршрут ЛОГИНА
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ message: "Пользователь не найден" });
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Неверный пароль" });
+
+        // Создаем ТОКЕН (паспорт)
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.status(200).json({ 
+            message: "Вы успешно вошли!",
+            token: token // Отправляем токен на фронтенд
+        });
+    } catch (e) {
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+});
+
+// 2. Добавь маршрут ПРОФИЛЯ
+app.get('/api/profile', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1]; // Достаем токен из заголовка
+
+    if (!token) return res.status(401).json({ message: "Вы не авторизованы" });
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await User.findById(decoded.userId).select('-password'); // Ищем юзера без пароля
+        res.json(user);
+    } catch (e) {
+        res.status(401).json({ message: "Сессия истекла" });
+    }
+});
