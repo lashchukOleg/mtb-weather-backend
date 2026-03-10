@@ -102,32 +102,6 @@ app.listen(PORT, () => console.log(`🚀 Сервер запущен на пор
 
 // Добавь это в свой server.js после маршрута регистрации
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    console.log("🔑 Попытка входа:", email);
-
-    try {
-        // 1. Ищем пользователя по почте
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "Пользователь не найден" });
-        }
-
-        // 2. Сравниваем введенный пароль с тем, что в базе
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Неверный пароль" });
-        }
-
-        // Если всё ок
-        console.log("✅ Успешный вход:", email);
-        res.status(200).json({ message: "Вы успешно вошли!" });
-
-    } catch (error) {
-        console.error("❌ Ошибка при входе:", error.message);
-        res.status(500).json({ message: "Ошибка сервера" });
-    }
-});
 
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
@@ -142,17 +116,39 @@ app.post('/api/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: "Неверный пароль" });
 
-        // 1. Создаем токен (убедись, что переменная JWT_SECRET задана выше)
-        const token = jwt.sign({ userId: user._id }, 'твой_секретный_ключ', { expiresIn: '24h' });
+        // ГЕНЕРИРУЕМ ТОКЕН
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
 
-        // 2. ОТПРАВЛЯЕМ И ТОКЕН, И СООБЩЕНИЕ
+        // ОТПРАВЛЯЕМ ОБЪЕКТ С ТОКЕНОМ
         res.status(200).json({ 
-            message: "Вы успешно вошли!",
-            token: token  // ВОТ ЭТОЙ СТРОЧКИ У ТЕБЯ НЕ ХВАТАЕТ!
+            message: "Вы успешно вошли!", 
+            token: token // ПРОВЕРЬ ЭТУ СТРОКУ
         });
-        
     } catch (e) {
-        res.status(500).json({ message: "Ошибка сервера: " + e.message });
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+});
+
+app.post('/api/register', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ message: "Email занят" });
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ email, password: hashedPassword });
+        await user.save();
+
+        // СОЗДАЕМ ТОКЕН
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
+
+        // ОТПРАВЛЯЕМ И ТОКЕН, И СООБЩЕНИЕ
+        res.status(201).json({ 
+            message: "Регистрация прошла успешно!", 
+            token: token // ПРОВЕРЬ ЭТУ СТРОКУ
+        });
+    } catch (e) {
+        res.status(500).json({ message: "Ошибка: " + e.message });
     }
 });
 
