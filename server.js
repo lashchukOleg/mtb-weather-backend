@@ -130,7 +130,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = '123qwe'; // Придумай любую строку
+const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
 
 // 1. Обнови маршрут ЛОГИНА
 app.post('/api/login', async (req, res) => {
