@@ -142,15 +142,17 @@ app.post('/api/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: "Неверный пароль" });
 
-        // Создаем ТОКЕН (паспорт)
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
+        // 1. Создаем токен (убедись, что переменная JWT_SECRET задана выше)
+        const token = jwt.sign({ userId: user._id }, 'твой_секретный_ключ', { expiresIn: '24h' });
 
+        // 2. ОТПРАВЛЯЕМ И ТОКЕН, И СООБЩЕНИЕ
         res.status(200).json({ 
             message: "Вы успешно вошли!",
-            token: token // Отправляем токен на фронтенд
+            token: token  // ВОТ ЭТОЙ СТРОЧКИ У ТЕБЯ НЕ ХВАТАЕТ!
         });
+        
     } catch (e) {
-        res.status(500).json({ message: "Ошибка сервера" });
+        res.status(500).json({ message: "Ошибка сервера: " + e.message });
     }
 });
 
