@@ -68,7 +68,7 @@ const User = mongoose.model('User', userSchema);
 // Маршрут регистрации
 app.post('/api/register', async (req, res) => {
     const { email, password } = req.body;
-    console.log("📥 Получен запрос на регистрацию:", email);
+    console.log("Получен запрос на регистрацию:", email);
 
     try {
         // 1. Проверяем, существует ли пользователь
@@ -87,12 +87,12 @@ app.post('/api/register', async (req, res) => {
         });
 
         const savedUser = await newUser.save(); // Обязательно await!
-        console.log("✅ Пользователь сохранен в БД:", savedUser.email);
+        console.log("Пользователь сохранен в БД:", savedUser.email);
 
         res.status(201).json({ message: "Регистрация прошла успешно!" });
 
     } catch (error) {
-        console.error("❌ Ошибка сервера:", error.message);
+        console.error("Ошибка сервера:", error.message);
         res.status(500).json({ message: "Ошибка при регистрации", error: error.message });
     }
 });
